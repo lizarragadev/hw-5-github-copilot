@@ -183,6 +183,30 @@ classDiagram
     NotificationService --> SMSService     : sendSMS()
 ```
 
+**Descripción del Diagrama UML de Componentes:**
+
+Este diagrama ilustra la estructura y las relaciones entre los componentes principales del sistema de reservación de habitaciones. La arquitectura sigue el patrón de microservicios con separación clara de responsabilidades:
+
+**Componentes Principales:**
+- **APIGateway**: Actúa como punto de entrada único, manejando el enrutamiento, autenticación, rate limiting y balanceeo de carga entre servicios
+- **AuthService**: Gestiona toda la lógica de autenticación y autorización, incluyendo login, registro, validación de tokens JWT y refresh de sesiones
+- **InventoryService**: Administra el catálogo de habitaciones, verificación de disponibilidad, actualizaciones de inventario y detalles de habitaciones
+- **ReservationService**: Núcleo del negocio que maneja el ciclo completo de reservas: creación, modificación, cancelación e historial
+- **PaymentIntegration**: Procesa pagos, reembolsos, validación de métodos de pago e integración con gateways externos
+- **NotificationService**: Sistema de comunicación multi-canal para emails, SMS, push notifications y tracking de entregas
+
+**Servicios Externos:**
+- **PaymentGateway**: Integración con proveedores de pago (Stripe, PayPal) para autorización y captura de pagos
+- **EmailService** y **SMSService**: Servicios especializados para el envío de notificaciones
+
+**Base de Datos**: Repositorio centralizado que almacena todos los datos del sistema de forma segmentada por dominio
+
+**Flujo de Interacciones:**
+1. El API Gateway recibe todas las peticiones y las enruta al servicio correspondiente
+2. Los servicios se comunican entre sí siguiendo patrones de arquitectura distribuida
+3. Las operaciones críticas (reservas) involucran múltiples servicios trabajando en conjunto
+4. Los servicios externos se integran a través de adapters para mantener el bajo acoplamiento
+
 ### Diagrama de Secuencia UML
 
 ```mermaid
@@ -244,6 +268,55 @@ sequenceDiagram
     API-->>U: confirmationDetails
 ```
 
+**Descripción del Diagrama de Secuencia UML:**
+
+Este diagrama muestra el flujo temporal completo del proceso de reserva, desde la autenticación del usuario hasta la confirmación final. Representa la interacción entre todos los componentes del sistema en un escenario de uso típico:
+
+**Fases del Proceso:**
+
+**1. Fase de Autenticación:**
+- El usuario envía credenciales al API Gateway
+- Se valida la identidad contra la base de datos
+- Se genera y retorna un token JWT para sesiones posteriores
+
+**2. Fase de Búsqueda:**
+- El usuario solicita búsqueda de habitaciones con parámetros específicos
+- El API Gateway valida el token de autenticación
+- El servicio de inventario consulta disponibilidad en tiempo real
+- Se retornan las opciones disponibles al usuario
+
+**3. Fase de Selección y Reserva:**
+- El usuario selecciona una habitación específica
+- Se revalida la autenticación y disponibilidad
+- El servicio de reservas inicia el proceso de creación
+- Se verifica nuevamente la disponibilidad para evitar condiciones de carrera
+
+**4. Fase de Persistencia:**
+- Los detalles de la reserva se almacenan en la base de datos
+- Se mantiene la integridad transaccional durante todo el proceso
+
+**5. Fase de Procesamiento de Pago:**
+- Se inicia el procesamiento del pago de forma asíncrona
+- Se registra el intento de pago para auditoria
+- Se comunica con el gateway de pagos externo
+- Se actualiza el estado del pago en el sistema
+
+**6. Fase de Notificación:**
+- Una vez confirmado el pago, se activa el sistema de notificaciones
+- Se envían confirmaciones por múltiples canales (email y SMS)
+- Se registra el estado de entrega de las notificaciones
+
+**7. Fase de Confirmación:**
+- Se consolida toda la información de la reserva
+- Se retorna la confirmación completa al usuario
+
+**Características Importantes:**
+- **Validación Continua**: El token se valida en cada operación crítica
+- **Verificación Doble**: La disponibilidad se confirma múltiples veces para garantizar consistencia
+- **Procesamiento Asíncrono**: Los pagos y notificaciones se manejan de forma no bloqueante
+- **Trazabilidad Completa**: Cada paso se registra para auditoria y debugging
+- **Manejo de Errores**: Cada servicio puede fallar independientemente sin afectar el flujo completo
+
 ### Diagrama de Transición de Estados
 
 ```mermaid
@@ -280,6 +353,66 @@ stateDiagram-v2
     note right of Paid : Estado principal para\nreservas activas
     note right of Completed : Estado final\npositivo
 ```
+
+**Descripción del Diagrama de Transición de Estados:**
+
+Este diagrama modela el ciclo de vida completo de una reserva en el sistema, mostrando todos los estados posibles y las transiciones válidas entre ellos. Es fundamental para la lógica de negocio y garantiza la integridad de las operaciones:
+
+**Estados Principales:**
+
+**Estados Iniciales:**
+- **Pending**: Estado inicial cuando se crea una nueva reserva, pendiente de verificación de disponibilidad
+- **Failed**: Estado de falla cuando la habitación no está disponible en el momento de la verificación
+
+**Estados de Confirmación:**
+- **Confirmed**: La reserva ha sido validada y la habitación está reservada, pero pendiente de pago
+- **PaymentFailed**: El procesamiento del pago ha fallado, pero la reserva aún puede ser recuperada
+
+**Estados Activos:**
+- **Paid**: Estado principal de las reservas activas, el pago ha sido procesado exitosamente
+- **Modified**: Estado temporal cuando se están realizando cambios a una reserva existente
+
+**Estados de Finalización:**
+- **CheckedIn**: El huésped ha llegado y se ha registrado en la habitación
+- **CheckedOut**: El huésped ha completado su estadía y se ha retirado
+- **NoShow**: El huésped no se presentó en la fecha programada
+- **Completed**: Estado final positivo, la reserva ha sido completada exitosamente
+- **Cancelled**: Estado final cuando la reserva ha sido cancelada por cualquier motivo
+
+**Transiciones Críticas:**
+
+**Flujo Principal (Camino Feliz):**
+1. `Pending → Confirmed`: Verificación exitosa de disponibilidad
+2. `Confirmed → Paid`: Procesamiento exitoso del pago
+3. `Paid → CheckedIn`: Registro del huésped en fecha programada
+4. `CheckedIn → CheckedOut`: Finalización normal de la estadía
+5. `CheckedOut → Completed`: Cierre exitoso de la reserva
+
+**Flujos de Recuperación:**
+- `PaymentFailed → Confirmed`: Reintento exitoso de pago
+- `Modified → Paid`: Confirmación de modificaciones realizadas
+
+**Flujos de Cancelación:**
+- Desde `Confirmed`, `Paid`, `Modified`, o `PaymentFailed` → `Cancelled`
+- Permite cancelaciones en múltiples puntos del proceso
+
+**Flujos de Excepción:**
+- `CheckedIn → NoShow`: Timeout automático si no hay actividad
+- `NoShow → Completed`: Procesamiento de no-show con posibles penalizaciones
+
+**Reglas de Negocio Implementadas:**
+- **No Retorno**: Los estados finales (`Completed`, `Cancelled`, `Failed`) no permiten transiciones adicionales
+- **Recuperación de Pagos**: Fallos de pago no terminan inmediatamente la reserva
+- **Flexibilidad de Modificación**: Las reservas pagadas pueden ser modificadas antes del check-in
+- **Gestión de No-Shows**: Sistema automatizado para manejar ausencias de huéspedes
+- **Trazabilidad**: Cada transición genera eventos para auditoria y análisis de negocio
+
+**Consideraciones Técnicas:**
+- Estados implementados como enum en el código
+- Transiciones validadas mediante máquina de estados
+- Eventos generados en cada cambio de estado para sistemas downstream
+- Timeouts automáticos para transiciones temporales (NoShow)
+- Logging completo de cambios de estado para troubleshooting
 
 ---
 
@@ -361,7 +494,7 @@ Las siguientes pantallas fueron diseñadas utilizando Uizard para proporcionar u
 
 ---
 
-## 🛠️ Tecnologías Utilizadas
+## 🛠️ Tecnologías Sugeridas a utilizar.
 
 ### Backend
 - **Framework**: FastAPI (Python)
@@ -392,160 +525,6 @@ Las siguientes pantallas fueron diseñadas utilizando Uizard para proporcionar u
   - Email: SendGrid
   - SMS: Twilio
 - **Mapas**: Google Maps API
-
-
-## 🚀 Instrucciones de Instalación
-
-### Prerrequisitos
-- **Docker**: v20.10+
-- **Docker Compose**: v2.0+
-- **Node.js**: v18+
-- **Python**: 3.9+
-- **Git**: Para clonar el repositorio
-
-### 🐳 Instalación con Docker (Recomendado)
-
-#### 1. Clonar el Repositorio
-```bash
-git clone https://github.com/tu-usuario/reservations-system.git
-cd reservations-system
-```
-
-#### 2. Configurar Variables de Entorno
-```bash
-# Copiar archivo de ejemplo
-cp .env.example .env
-
-# Editar variables según tu entorno
-nano .env
-```
-
-#### 3. Construir y Ejecutar Servicios
-```bash
-# Construir todas las imágenes
-docker-compose build
-
-# Ejecutar en modo desarrollo
-docker-compose up -d
-
-# Verificar que todos los servicios estén funcionando
-docker-compose ps
-```
-
-#### 4. Inicializar Base de Datos
-```bash
-# Ejecutar migraciones
-docker-compose exec api-gateway python -m alembic upgrade head
-
-# Cargar datos de prueba
-docker-compose exec api-gateway python scripts/seed_data.py
-```
-
-#### 5. Acceder a la Aplicación
-- **Frontend Web**: http://localhost:3000
-- **API Gateway**: http://localhost:8000
-- **Documentación API**: http://localhost:8000/docs
-- **Grafana**: http://localhost:3001
-- **RabbitMQ Management**: http://localhost:15672
-
-### 🐍 Instalación Manual (Desarrollo)
-
-#### 1. Configurar Backend
-```bash
-# Crear entorno virtual
-python -m venv venv
-source venv/bin/activate  # En Windows: venv\Scripts\activate
-
-# Instalar dependencias para cada servicio
-cd services/api-gateway
-pip install -r requirements.txt
-
-cd ../auth-service
-pip install -r requirements.txt
-
-# Repetir para todos los servicios...
-```
-
-#### 2. Configurar Frontend
-```bash
-# Instalar dependencias web
-cd frontend/web
-npm install
-
-# Instalar dependencias móvil
-cd ../mobile
-npm install
-```
-
-#### 3. Configurar Base de Datos
-```bash
-# Instalar PostgreSQL
-brew install postgresql  # macOS
-# sudo apt-get install postgresql  # Ubuntu
-
-# Crear base de datos
-createdb reservations_system
-
-# Configurar Redis
-brew install redis  # macOS
-redis-server
-```
-
-#### 4. Ejecutar Servicios
-```bash
-# Terminal 1: API Gateway
-cd services/api-gateway
-uvicorn src.main:app --reload --port 8000
-
-# Terminal 2: Auth Service
-cd services/auth-service
-uvicorn src.main:app --reload --port 8001
-
-# Terminal 3: Frontend Web
-cd frontend/web
-npm start
-
-# Repetir para otros servicios...
-```
-
-### 🧪 Ejecutar Tests
-
-```bash
-# Tests unitarios
-docker-compose exec api-gateway python -m pytest tests/unit/ -v
-
-# Tests de integración
-docker-compose exec api-gateway python -m pytest tests/integration/ -v
-
-# Tests end-to-end
-cd tests/e2e
-npm test
-
-# Coverage completo
-docker-compose exec api-gateway python -m pytest --cov=src tests/
-```
-
-### 🔧 Comandos Útiles
-
-```bash
-# Ver logs de todos los servicios
-docker-compose logs -f
-
-# Ver logs de un servicio específico
-docker-compose logs -f reservation-service
-
-# Reiniciar un servicio
-docker-compose restart payment-service
-
-# Escalar un servicio
-docker-compose up -d --scale reservation-service=3
-
-# Acceder a un contenedor
-docker-compose exec api-gateway bash
-
-# Limpiar todo
-docker-compose down -v --remove-orphans
-```
 
 ---
 
