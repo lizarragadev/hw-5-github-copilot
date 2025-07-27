@@ -2,19 +2,45 @@
 # Sistema de Reservación de Habitaciones - Arquitectura de Microservicios
 
 ## 📋 Tabla de Contenidos
-- [Introducción](#introducción)
-- [Objetivos del Sistema](#objetivos-del-sistema)
-- [Arquitectura del Sistema](#arquitectura-del-sistema)
-  - [Diagrama de Arquitectura de Software](#diagrama-de-arquitectura-de-software)
-  - [Diagrama UML de Componentes](#diagrama-uml-de-componentes)
-  - [Diagrama de Secuencia UML](#diagrama-de-secuencia-uml)
-  - [Diagrama de Transición de Estados](#diagrama-de-transición-de-estados)
-- [Prototipo de Interfaz de Usuario](#prototipo-de-interfaz-de-usuario)
-- [Tecnologías Utilizadas](#tecnologías-utilizadas)
-- [Estructura del Proyecto](#estructura-del-proyecto)
-- [Instrucciones de Instalación](#instrucciones-de-instalación)
-- [Funcionalidades Principales](#funcionalidades-principales)
-- [Consideraciones de Escalabilidad](#consideraciones-de-escalabilidad)
+- [Sistema de Reservación de Habitaciones - Arquitectura de Microservicios](#sistema-de-reservación-de-habitaciones---arquitectura-de-microservicios)
+  - [📋 Tabla de Contenidos](#-tabla-de-contenidos)
+  - [🎯 Introducción](#-introducción)
+    - [Características Principales:](#características-principales)
+  - [🎯 Objetivos del Sistema](#-objetivos-del-sistema)
+    - [Objetivos de Negocio:](#objetivos-de-negocio)
+    - [Objetivos Técnicos:](#objetivos-técnicos)
+  - [🏗️ Arquitectura del Sistema](#️-arquitectura-del-sistema)
+    - [Diagrama de Arquitectura de Software](#diagrama-de-arquitectura-de-software)
+    - [Diagrama UML de Componentes](#diagrama-uml-de-componentes)
+    - [Diagrama de Secuencia UML](#diagrama-de-secuencia-uml)
+    - [Diagrama de Transición de Estados](#diagrama-de-transición-de-estados)
+  - [🎨 Prototipo de Interfaz de Usuario](#-prototipo-de-interfaz-de-usuario)
+    - [🔐 Pantalla de Login y Registro](#-pantalla-de-login-y-registro)
+    - [🔍 Búsqueda de Habitaciones](#-búsqueda-de-habitaciones)
+    - [🏨 Resultados de Búsqueda](#-resultados-de-búsqueda)
+    - [📊 Filtros Avanzados](#-filtros-avanzados)
+    - [🛏️ Vista Detallada de Habitación](#️-vista-detallada-de-habitación)
+    - [📋 Detalles de Habitación](#-detalles-de-habitación)
+    - [🔄 Flujo de Reserva](#-flujo-de-reserva)
+    - [✅ Confirmación de Reserva](#-confirmación-de-reserva)
+  - [🛠️ Tecnologías Sugeridas a utilizar.](#️-tecnologías-sugeridas-a-utilizar)
+    - [Backend](#backend)
+    - [Frontend](#frontend)
+    - [Infraestructura](#infraestructura)
+    - [Integraciones Externas](#integraciones-externas)
+  - [✨ Funcionalidades Principales](#-funcionalidades-principales)
+    - [👤 Gestión de Usuarios](#-gestión-de-usuarios)
+    - [🔍 Búsqueda y Filtrado](#-búsqueda-y-filtrado)
+    - [🏨 Gestión de Inventario](#-gestión-de-inventario)
+    - [📅 Sistema de Reservas](#-sistema-de-reservas)
+    - [💳 Procesamiento de Pagos](#-procesamiento-de-pagos)
+    - [📢 Sistema de Notificaciones](#-sistema-de-notificaciones)
+  - [🔧 Consideraciones de Escalabilidad](#-consideraciones-de-escalabilidad)
+    - [Arquitectura Horizontal](#arquitectura-horizontal)
+    - [Gestión de Datos](#gestión-de-datos)
+    - [Rendimiento](#rendimiento)
+    - [Monitoreo y Observabilidad](#monitoreo-y-observabilidad)
+    - [Seguridad](#seguridad)
 
 ---
 
@@ -605,30 +631,3 @@ Las siguientes pantallas fueron diseñadas utilizando Uizard para proporcionar u
 - **Data Encryption**: En tránsito y en reposo
 - **Security Scanning**: Análisis automático de vulnerabilidades
 - **Compliance**: GDPR, PCI DSS, SOC 2
-
----
-
-## 🤝 Contribución
-
-### Proceso de Desarrollo
-1. Fork del repositorio
-2. Crear branch feature (`git checkout -b feature/nueva-funcionalidad`)
-3. Commits con mensajes descriptivos
-4. Push al branch (`git push origin feature/nueva-funcionalidad`)
-5. Crear Pull Request
-
-### Estándares de Código
-- **Python**: PEP 8, Black formatter, isort
-- **JavaScript**: ESLint, Prettier
-- **Tests**: Cobertura mínima 80%
-- **Documentación**: Docstrings y comentarios claros
-
----
-
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.
-
----
-
-*Desarrollado con ❤️ usando GitHub Copilot y las mejores prácticas de arquitectura de software*
